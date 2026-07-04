@@ -1,0 +1,606 @@
+{
+  "updatedAt": "2026-07-04T03:58:55.287Z",
+  "weather": {
+    "100": {
+      "response": {
+        "header": {
+          "resultCode": "00",
+          "resultMsg": "NORMAL_SERVICE"
+        },
+        "body": {
+          "dataType": "JSON",
+          "items": {
+            "item": [
+              {
+                "stnId": "100",
+                "stnNm": "대관령",
+                "tm": "2026-07-03",
+                "avgTa": "20.4",
+                "minTa": "16.8",
+                "minTaHrmt": "0109",
+                "maxTa": "24.7",
+                "maxTaHrmt": "1207",
+                "mi10MaxRn": "2.9",
+                "mi10MaxRnHrmt": "44",
+                "hr1MaxRn": "4.1",
+                "hr1MaxRnHrmt": "12",
+                "sumRnDur": "",
+                "sumRn": "4.7",
+                "maxInsWs": "7.2",
+                "maxInsWsWd": "250",
+                "maxInsWsHrmt": "1209",
+                "maxWs": "4.6",
+                "maxWsWd": "270",
+                "maxWsHrmt": "1404",
+                "avgWs": "2.4",
+                "hr24SumRws": "2063",
+                "maxWd": "290",
+                "avgTd": "17.4",
+                "minRhm": "63",
+                "minRhmHrmt": "1149",
+                "avgRhm": "84.6",
+                "avgPv": "19.9",
+                "avgPa": "924.7",
+                "maxPs": "1012.8",
+                "maxPsHrmt": "0036",
+                "minPs": "1008.1",
+                "minPsHrmt": "1706",
+                "avgPs": "1010.2",
+                "ssDur": "14.7",
+                "sumSsHr": "5.9",
+                "hr1MaxIcsrHrmt": "1000",
+                "hr1MaxIcsr": "3.09",
+                "sumGsr": "20.18",
+                "ddMefs": "",
+                "ddMefsHrmt": "",
+                "ddMes": "",
+                "ddMesHrmt": "",
+                "sumDpthFhsc": "",
+                "avgTca": "6.0",
+                "avgLmac": "3.0",
+                "avgTs": "22.9",
+                "minTg": "15.8",
+                "avgCm5Te": "",
+                "avgCm10Te": "",
+                "avgCm20Te": "",
+                "avgCm30Te": "",
+                "avgM05Te": "",
+                "avgM10Te": "",
+                "avgM15Te": "",
+                "avgM30Te": "",
+                "avgM50Te": "",
+                "sumLrgEv": "3.6",
+                "sumSmlEv": "5.2",
+                "n99Rn": "",
+                "iscs": "",
+                "sumFogDur": ""
+              }
+            ]
+          },
+          "pageNo": 1,
+          "numOfRows": 10,
+          "totalCount": 1
+        }
+      }
+    },
+    "108": {
+      "response": {
+        "header": {
+          "resultCode": "00",
+          "resultMsg": "NORMAL_SERVICE"
+        },
+        "body": {
+          "dataType": "JSON",
+          "items": {
+            "item": [
+              {
+                "stnId": "108",
+                "stnNm": "서울",
+                "tm": "2026-07-03",
+                "avgTa": "24.8",
+                "minTa": "22.3",
+                "minTaHrmt": "0241",
+                "maxTa": "28.5",
+                "maxTaHrmt": "1723",
+                "mi10MaxRn": "0.6",
+                "mi10MaxRnHrmt": "633",
+                "hr1MaxRn": "1.3",
+                "hr1MaxRnHrmt": "709",
+                "sumRnDur": "2.53",
+                "sumRn": "2.4",
+                "maxInsWs": "6.3",
+                "maxInsWsWd": "290",
+                "maxInsWsHrmt": "1857",
+                "maxWs": "3.8",
+                "maxWsWd": "270",
+                "maxWsHrmt": "1957",
+                "avgWs": "1.9",
+                "hr24SumRws": "1654",
+                "maxWd": "250",
+                "avgTd": "19.7",
+                "minRhm": "58",
+                "minRhmHrmt": "1314",
+                "avgRhm": "74.4",
+                "avgPv": "23.0",
+                "avgPa": "1001.1",
+                "maxPs": "1012.3",
+                "maxPsHrmt": "0004",
+                "minPs": "1009.3",
+                "minPsHrmt": "1847",
+                "avgPs": "1010.9",
+                "ssDur": "14.7",
+                "sumSsHr": "2.6",
+                "hr1MaxIcsrHrmt": "1200",
+                "hr1MaxIcsr": "2.88",
+                "sumGsr": "12.69",
+                "ddMefs": "",
+                "ddMefsHrmt": "",
+                "ddMes": "",
+                "ddMesHrmt": "",
+                "sumDpthFhsc": "",
+                "avgTca": "7.9",
+                "avgLmac": "5.4",
+                "avgTs": "24.0",
+                "minTg": "18.7",
+                "avgCm5Te": "24.4",
+                "avgCm10Te": "25.3",
+                "avgCm20Te": "25.4",
+                "avgCm30Te": "25.1",
+                "avgM05Te": "25.0",
+                "avgM10Te": "22.7",
+                "avgM15Te": "21.5",
+                "avgM30Te": "16.9",
+                "avgM50Te": "14.2",
+                "sumLrgEv": "2.9",
+                "sumSmlEv": "4.1",
+                "n99Rn": "",
+                "iscs": "{소나기}0618-0830. {박무}0625-{박무}{강도0}0900-1045. {소나기}1505-1525.",
+                "sumFogDur": ""
+              }
+            ]
+          },
+          "pageNo": 1,
+          "numOfRows": 10,
+          "totalCount": 1
+        }
+      }
+    },
+    "133": {
+      "response": {
+        "header": {
+          "resultCode": "00",
+          "resultMsg": "NORMAL_SERVICE"
+        },
+        "body": {
+          "dataType": "JSON",
+          "items": {
+            "item": [
+              {
+                "stnId": "133",
+                "stnNm": "대전",
+                "tm": "2026-07-03",
+                "avgTa": "25.8",
+                "minTa": "22.2",
+                "minTaHrmt": "0440",
+                "maxTa": "30.2",
+                "maxTaHrmt": "1251",
+                "mi10MaxRn": "",
+                "mi10MaxRnHrmt": "",
+                "hr1MaxRn": "",
+                "hr1MaxRnHrmt": "",
+                "sumRnDur": "",
+                "sumRn": "",
+                "maxInsWs": "5.9",
+                "maxInsWsWd": "200",
+                "maxInsWsHrmt": "2024",
+                "maxWs": "3.3",
+                "maxWsWd": "200",
+                "maxWsHrmt": "2032",
+                "avgWs": "1.7",
+                "hr24SumRws": "1432",
+                "maxWd": "200",
+                "avgTd": "20.2",
+                "minRhm": "52",
+                "minRhmHrmt": "1230",
+                "avgRhm": "72.6",
+                "avgPv": "23.7",
+                "avgPa": "1003.3",
+                "maxPs": "1012.8",
+                "maxPsHrmt": "0011",
+                "minPs": "1009.5",
+                "minPsHrmt": "1644",
+                "avgPs": "1011.0",
+                "ssDur": "14.6",
+                "sumSsHr": "7.0",
+                "hr1MaxIcsrHrmt": "1200",
+                "hr1MaxIcsr": "3.62",
+                "sumGsr": "22.73",
+                "ddMefs": "",
+                "ddMefsHrmt": "",
+                "ddMes": "",
+                "ddMesHrmt": "",
+                "sumDpthFhsc": "",
+                "avgTca": "7.5",
+                "avgLmac": "3.0",
+                "avgTs": "28.2",
+                "minTg": "21.2",
+                "avgCm5Te": "28.9",
+                "avgCm10Te": "27.9",
+                "avgCm20Te": "27.0",
+                "avgCm30Te": "26.7",
+                "avgM05Te": "26.2",
+                "avgM10Te": "24.6",
+                "avgM15Te": "22.4",
+                "avgM30Te": "18.4",
+                "avgM50Te": "16.5",
+                "sumLrgEv": "4.0",
+                "sumSmlEv": "5.8",
+                "n99Rn": "",
+                "iscs": "",
+                "sumFogDur": ""
+              }
+            ]
+          },
+          "pageNo": 1,
+          "numOfRows": 10,
+          "totalCount": 1
+        }
+      }
+    },
+    "143": {
+      "response": {
+        "header": {
+          "resultCode": "00",
+          "resultMsg": "NORMAL_SERVICE"
+        },
+        "body": {
+          "dataType": "JSON",
+          "items": {
+            "item": [
+              {
+                "stnId": "143",
+                "stnNm": "대구",
+                "tm": "2026-07-03",
+                "avgTa": "26.0",
+                "minTa": "22.1",
+                "minTaHrmt": "0311",
+                "maxTa": "30.1",
+                "maxTaHrmt": "1529",
+                "mi10MaxRn": "0.2",
+                "mi10MaxRnHrmt": "231",
+                "hr1MaxRn": "0.2",
+                "hr1MaxRnHrmt": "141",
+                "sumRnDur": "",
+                "sumRn": "0.2",
+                "maxInsWs": "5.2",
+                "maxInsWsWd": "290",
+                "maxInsWsHrmt": "1301",
+                "maxWs": "3.0",
+                "maxWsWd": "270",
+                "maxWsHrmt": "1330",
+                "avgWs": "1.2",
+                "hr24SumRws": "997",
+                "maxWd": "270",
+                "avgTd": "19.2",
+                "minRhm": "49",
+                "minRhmHrmt": "1403",
+                "avgRhm": "68.0",
+                "avgPv": "22.3",
+                "avgPa": "1004.3",
+                "maxPs": "1012.5",
+                "maxPsHrmt": "0600",
+                "minPs": "1008.6",
+                "minPsHrmt": "1745",
+                "avgPs": "1010.4",
+                "ssDur": "14.6",
+                "sumSsHr": "4.4",
+                "hr1MaxIcsrHrmt": "1000",
+                "hr1MaxIcsr": "2.89",
+                "sumGsr": "18.24",
+                "ddMefs": "",
+                "ddMefsHrmt": "",
+                "ddMes": "",
+                "ddMesHrmt": "",
+                "sumDpthFhsc": "",
+                "avgTca": "8.4",
+                "avgLmac": "5.8",
+                "avgTs": "29.2",
+                "minTg": "21.5",
+                "avgCm5Te": "",
+                "avgCm10Te": "",
+                "avgCm20Te": "",
+                "avgCm30Te": "",
+                "avgM05Te": "",
+                "avgM10Te": "",
+                "avgM15Te": "",
+                "avgM30Te": "",
+                "avgM50Te": "",
+                "sumLrgEv": "3.4",
+                "sumSmlEv": "4.8",
+                "n99Rn": "",
+                "iscs": "{소나기}0150-{소나기}{강도0}0300-0320.",
+                "sumFogDur": ""
+              }
+            ]
+          },
+          "pageNo": 1,
+          "numOfRows": 10,
+          "totalCount": 1
+        }
+      }
+    },
+    "156": {
+      "response": {
+        "header": {
+          "resultCode": "00",
+          "resultMsg": "NORMAL_SERVICE"
+        },
+        "body": {
+          "dataType": "JSON",
+          "items": {
+            "item": [
+              {
+                "stnId": "156",
+                "stnNm": "광주",
+                "tm": "2026-07-03",
+                "avgTa": "24.8",
+                "minTa": "22.3",
+                "minTaHrmt": "0415",
+                "maxTa": "28.7",
+                "maxTaHrmt": "1152",
+                "mi10MaxRn": "",
+                "mi10MaxRnHrmt": "",
+                "hr1MaxRn": "",
+                "hr1MaxRnHrmt": "",
+                "sumRnDur": "",
+                "sumRn": "0.0",
+                "maxInsWs": "7.3",
+                "maxInsWsWd": "140",
+                "maxInsWsHrmt": "1620",
+                "maxWs": "4.4",
+                "maxWsWd": "160",
+                "maxWsHrmt": "1622",
+                "avgWs": "2.1",
+                "hr24SumRws": "1816",
+                "maxWd": "160",
+                "avgTd": "20.9",
+                "minRhm": "64",
+                "minRhmHrmt": "1155",
+                "avgRhm": "79.5",
+                "avgPv": "24.7",
+                "avgPa": "1003.4",
+                "maxPs": "1013.1",
+                "maxPsHrmt": "0336",
+                "minPs": "1010.0",
+                "minPsHrmt": "2032",
+                "avgPs": "1011.5",
+                "ssDur": "14.5",
+                "sumSsHr": "2.7",
+                "hr1MaxIcsrHrmt": "1100",
+                "hr1MaxIcsr": "2.53",
+                "sumGsr": "17.94",
+                "ddMefs": "",
+                "ddMefsHrmt": "",
+                "ddMes": "",
+                "ddMesHrmt": "",
+                "sumDpthFhsc": "",
+                "avgTca": "8.9",
+                "avgLmac": "3.3",
+                "avgTs": "26.3",
+                "minTg": "21.5",
+                "avgCm5Te": "",
+                "avgCm10Te": "",
+                "avgCm20Te": "",
+                "avgCm30Te": "",
+                "avgM05Te": "",
+                "avgM10Te": "",
+                "avgM15Te": "",
+                "avgM30Te": "",
+                "avgM50Te": "",
+                "sumLrgEv": "3.1",
+                "sumSmlEv": "4.4",
+                "n99Rn": "",
+                "iscs": "{비}2345-{비}{강도0}2400-",
+                "sumFogDur": ""
+              }
+            ]
+          },
+          "pageNo": 1,
+          "numOfRows": 10,
+          "totalCount": 1
+        }
+      }
+    },
+    "184": {
+      "response": {
+        "header": {
+          "resultCode": "00",
+          "resultMsg": "NORMAL_SERVICE"
+        },
+        "body": {
+          "dataType": "JSON",
+          "items": {
+            "item": [
+              {
+                "stnId": "184",
+                "stnNm": "제주",
+                "tm": "2026-07-03",
+                "avgTa": "23.1",
+                "minTa": "22.0",
+                "minTaHrmt": "0257",
+                "maxTa": "24.8",
+                "maxTaHrmt": "1258",
+                "mi10MaxRn": "10.0",
+                "mi10MaxRnHrmt": "2351",
+                "hr1MaxRn": "10.6",
+                "hr1MaxRnHrmt": "2301",
+                "sumRnDur": "11.53",
+                "sumRn": "12.4",
+                "maxInsWs": "6.5",
+                "maxInsWsWd": "270",
+                "maxInsWsHrmt": "2107",
+                "maxWs": "4.3",
+                "maxWsWd": "250",
+                "maxWsHrmt": "2044",
+                "avgWs": "1.6",
+                "hr24SumRws": "1387",
+                "maxWd": "20",
+                "avgTd": "20.6",
+                "minRhm": "78",
+                "minRhmHrmt": "1355",
+                "avgRhm": "86.0",
+                "avgPv": "24.3",
+                "avgPa": "1008.7",
+                "maxPs": "1012.6",
+                "maxPsHrmt": "0042",
+                "minPs": "1008.5",
+                "minPsHrmt": "1910",
+                "avgPs": "1011.1",
+                "ssDur": "14.3",
+                "sumSsHr": "0.0",
+                "hr1MaxIcsrHrmt": "1200",
+                "hr1MaxIcsr": "1.09",
+                "sumGsr": "6.29",
+                "ddMefs": "",
+                "ddMefsHrmt": "",
+                "ddMes": "",
+                "ddMesHrmt": "",
+                "sumDpthFhsc": "",
+                "avgTca": "9.5",
+                "avgLmac": "5.6",
+                "avgTs": "24.0",
+                "minTg": "20.1",
+                "avgCm5Te": "25.2",
+                "avgCm10Te": "25.9",
+                "avgCm20Te": "25.8",
+                "avgCm30Te": "25.6",
+                "avgM05Te": "25.3",
+                "avgM10Te": "23.9",
+                "avgM15Te": "23.4",
+                "avgM30Te": "20.9",
+                "avgM50Te": "17.4",
+                "sumLrgEv": "1.2",
+                "sumSmlEv": "1.7",
+                "n99Rn": "",
+                "iscs": "{비}1002-1030. {비}1216-{비}{강도0}1500-{비}{강도0}1800-2015. {박무}1731-{박무}{강도0}1800-1845. {박무}2023-{박무}{강도0}2100-{박무}{강도2}2400- {비}2055-{비}{강도0}2100-{시정(미만)}{1km}{비}2347-{시정(미만)}{0.5km}{비}2350-{시정(이상)}{0.5km}{비}2355-{시정(이상)}{1km}{비}2358-{비}{강도1}2400-",
+                "sumFogDur": ""
+              }
+            ]
+          },
+          "pageNo": 1,
+          "numOfRows": 10,
+          "totalCount": 1
+        }
+      }
+    }
+  },
+  "price": {
+    "01": {
+      "100": {
+        "condition": [
+          {
+            "p_product_cls_code": "01",
+            "p_country_code": [],
+            "p_regday": [],
+            "p_convert_kg_yn": "N",
+            "p_category_code": "100",
+            "p_cert_key": "a0f97f70-c17b-4b27-ae96-7a87859fa37e",
+            "p_cert_id": "8483",
+            "p_returntype": "json"
+          }
+        ],
+        "data": [
+          "200"
+        ]
+      },
+      "200": {
+        "condition": [
+          {
+            "p_product_cls_code": "01",
+            "p_country_code": [],
+            "p_regday": [],
+            "p_convert_kg_yn": "N",
+            "p_category_code": "200",
+            "p_cert_key": "a0f97f70-c17b-4b27-ae96-7a87859fa37e",
+            "p_cert_id": "8483",
+            "p_returntype": "json"
+          }
+        ],
+        "data": [
+          "200"
+        ]
+      },
+      "400": {
+        "condition": [
+          {
+            "p_product_cls_code": "01",
+            "p_country_code": [],
+            "p_regday": [],
+            "p_convert_kg_yn": "N",
+            "p_category_code": "400",
+            "p_cert_key": "a0f97f70-c17b-4b27-ae96-7a87859fa37e",
+            "p_cert_id": "8483",
+            "p_returntype": "json"
+          }
+        ],
+        "data": [
+          "200"
+        ]
+      }
+    },
+    "02": {
+      "100": {
+        "condition": [
+          {
+            "p_product_cls_code": "02",
+            "p_country_code": [],
+            "p_regday": [],
+            "p_convert_kg_yn": "N",
+            "p_category_code": "100",
+            "p_cert_key": "a0f97f70-c17b-4b27-ae96-7a87859fa37e",
+            "p_cert_id": "8483",
+            "p_returntype": "json"
+          }
+        ],
+        "data": [
+          "200"
+        ]
+      },
+      "200": {
+        "condition": [
+          {
+            "p_product_cls_code": "02",
+            "p_country_code": [],
+            "p_regday": [],
+            "p_convert_kg_yn": "N",
+            "p_category_code": "200",
+            "p_cert_key": "a0f97f70-c17b-4b27-ae96-7a87859fa37e",
+            "p_cert_id": "8483",
+            "p_returntype": "json"
+          }
+        ],
+        "data": [
+          "200"
+        ]
+      },
+      "400": {
+        "condition": [
+          {
+            "p_product_cls_code": "02",
+            "p_country_code": [],
+            "p_regday": [],
+            "p_convert_kg_yn": "N",
+            "p_category_code": "400",
+            "p_cert_key": "a0f97f70-c17b-4b27-ae96-7a87859fa37e",
+            "p_cert_id": "8483",
+            "p_returntype": "json"
+          }
+        ],
+        "data": [
+          "200"
+        ]
+      }
+    }
+  },
+  "volume": null
+}
