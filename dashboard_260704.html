@@ -792,19 +792,22 @@
                 await fetchWeatherWarnings();
 
                 const weatherPromises = stationsList.map(stn => {
-                    return fetch(`/api/weather?stn_id=${stn.id}`)
-                        .then(res => res.json())
-                        .then(json => {
-                            const item = json.response?.body?.items?.item?.[0] || json.response?.body?.items?.items?.item?.[0];
+                    // 예보 API와 실시간 어제 날씨 API 병렬 호출
+                    const weatherFetch = fetch(`/api/weather?stn_id=${stn.id}`).then(res => res.json()).catch(() => null);
+                    const forecastFetch = fetch(`/api/weather/forecast?stn_id=${stn.id}`).then(res => res.json()).catch(() => null);
+                    
+                    return Promise.all([weatherFetch, forecastFetch])
+                        .then(([weatherJson, forecastJson]) => {
+                            const item = weatherJson?.response?.body?.items?.item?.[0] || weatherJson?.response?.body?.items?.items?.item?.[0];
                             return {
                                 ...stn,
                                 temp: item ? parseFloat(item.taAvg || '24.5') : 24.5,
                                 rain: item ? parseFloat(item.rnDay || '0.0') : 0.0,
-                                raw: item
+                                forecastList: forecastJson?.forecast || []
                             };
                         })
-                        .catch(err => {
-                            return { ...stn, temp: 24.5, rain: 0.0, err: true };
+                        .catch(() => {
+                            return { ...stn, temp: 24.5, rain: 0.0, forecastList: [], err: true };
                         });
                 });
 
@@ -832,6 +835,48 @@
                         }
                     }
 
+                    // 7일 예보 SVG 미니 차트 생성
+                    let forecastChartSVG = '';
+                    let forecastDaysHTML = '';
+                    
+                    if (stn.forecastList && stn.forecastList.length > 0) {
+                        const temps = stn.forecastList.map(f => f.temp);
+                        const minT = Math.min(...temps) - 1.5;
+                        const maxT = Math.max(...temps) + 1.5;
+                        const chartH = 40;
+                        const getForecastY = (val) => chartH - ((val - minT) / (maxT - minT) * (chartH - 12) + 6);
+                        
+                        let points = '';
+                        stn.forecastList.forEach((f, idx) => {
+                            const x = (idx / 6) * 100; // 0% ~ 100% 비율
+                            const y = getForecastY(f.temp);
+                            if (idx === 0) points += `M ${x} ${y}`;
+                            else points += ` L ${x} ${y}`;
+                            
+                            // 각 요일별 아이콘 매칭
+                            let icon = '☀️';
+                            if (f.sky === '비') icon = '🌧️';
+                            else if (f.sky === '구름많음') icon = '⛅';
+
+                            forecastDaysHTML += `
+                                <div class="text-center flex flex-col items-center gap-0.5">
+                                    <span class="text-[8px] text-on-surface-variant font-medium">+${f.dayOffset}일</span>
+                                    <span class="text-[11px]" title="${f.sky}">${icon}</span>
+                                    <span class="text-[9px] font-semibold text-on-surface">${f.temp}°</span>
+                                </div>
+                            `;
+                        });
+                        
+                        forecastChartSVG = `
+                            <div class="mt-3 py-1 border-t border-outline-variant/10">
+                                <svg viewBox="0 0 100 40" class="w-full h-8 overflow-visible" preserveAspectRatio="none">
+                                    <path d="${points}" fill="none" stroke="#006d32" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                                    ${stn.forecastList.map((f, idx) => `<circle cx="${(idx/6)*100}" cy="${getForecastY(f.temp)}" r="2" fill="#00d166" />`).join('')}
+                                </svg>
+                            </div>
+                        `;
+                    }
+
                     return `
                         <div class="m3-card p-5 cursor-pointer bg-surface-container-lowest border transition-all duration-300 ${borderClass}" onclick="selectWeatherStation('${stn.id}', '${stn.name}')">
                             <div class="flex justify-between items-start mb-4">
@@ -844,7 +889,7 @@
                                     ${statusHTML}
                                 </div>
                             </div>
-                            <div class="grid grid-cols-2 gap-2 text-xs">
+                            <div class="grid grid-cols-2 gap-2 text-xs mb-3">
                                 <div class="bg-surface-container-low p-2 rounded-lg border border-outline-variant/10">
                                     <span class="text-[10px] text-on-surface-variant block">평균 기온</span>
                                     <span class="text-base font-space font-bold text-on-surface">${stn.temp.toFixed(1)}°C</span>
@@ -853,6 +898,17 @@
                                     <span class="text-[10px] text-on-surface-variant block">일일 강수량</span>
                                     <span class="text-base font-space font-bold text-on-surface">${stn.rain.toFixed(1)}mm</span>
                                 </div>
+                            </div>
+                            
+                            <!-- 향후 7일 기상 예보 영역 추가 -->
+                            <div class="mt-3 pt-3 border-t border-outline-variant/15">
+                                <h5 class="text-[10px] font-bold text-primary mb-2 flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-[10px]">online_prediction</span>향후 7일간 기상 예보 트렌드
+                                </h5>
+                                <div class="grid grid-cols-7 gap-1 bg-surface-container-low/50 p-2 rounded-lg border border-outline-variant/5">
+                                    ${forecastDaysHTML}
+                                </div>
+                                ${forecastChartSVG}
                             </div>
                         </div>
                     `;
@@ -1503,6 +1559,29 @@
             // 기상특보 조회 후 강제 시나리오 가중치 매칭
             const warning = checkStationWarning(currentStnName);
             
+            // 7일 예보 분석 데이터 가져오기
+            let forecastTrigger = null;
+            try {
+                const forecastRes = await fetch(`/api/weather/forecast?stn_id=${currentStnId}`);
+                if (forecastRes.ok) {
+                    const forecastJson = await forecastRes.json();
+                    const list = forecastJson?.forecast || [];
+                    if (list.length > 0) {
+                        const avgForecastTemp = list.reduce((sum, f) => sum + f.temp, 0) / list.length;
+                        const rainyDays = list.filter(f => f.sky === '비').length;
+                        
+                        // 예보 기반 자동 시나리오 조건
+                        if (avgForecastTemp >= 28.5) {
+                            forecastTrigger = 'heatwave';
+                        } else if (rainyDays >= 3) {
+                            forecastTrigger = 'heavyrain';
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn("[Forecast Sync] Failed to fetch forecast triggers:", e);
+            }
+
             if (warning) {
                 if (warning.type === 'heatwave') {
                     document.getElementById('event-heat').checked = true;
@@ -1514,8 +1593,20 @@
                     infoEl.innerHTML = `🚨 <strong>[실시간 특보 발효: 호우]</strong> ${currentStnName} 관측소 영역에 기상청 호우 특보가 공식 발표되었습니다! 예측 모델이 자동으로 [집중호우] 가중치로 강제 동기화되었습니다.`;
                 }
                 updateClimateSimulation();
+            } else if (forecastTrigger) {
+                // 특보가 없더라도, 7일 예보가 위험 수준이면 1주 뒤 예측을 위해 시나리오 자동 연쇄 매칭
+                if (forecastTrigger === 'heatwave') {
+                    document.getElementById('event-heat').checked = true;
+                    bannerEl.className = "max-w-2xl mx-auto mb-6 bg-amber-500/10 border border-amber-500/30 rounded-3xl py-2 px-4 flex items-center justify-center gap-3 text-xs text-amber-700 shadow-md";
+                    infoEl.innerHTML = `☀️ <strong>[예보 경보: 폭염 주의]</strong> 향후 7일 평균 예보 기온 고온 지속 감지로 1주 뒤 예측 모델에 자동으로 [폭염] 가중치가 임시 활성화되었습니다.`;
+                } else if (forecastTrigger === 'heavyrain') {
+                    document.getElementById('event-rain').checked = true;
+                    bannerEl.className = "max-w-2xl mx-auto mb-6 bg-blue-500/10 border border-blue-500/30 rounded-3xl py-2 px-4 flex items-center justify-center gap-3 text-xs text-blue-600 shadow-md";
+                    infoEl.innerHTML = `🌧️ <strong>[예보 경보: 강우 주의]</strong> 향후 7일 중 3일 이상 비 예보 감지로 1주 뒤 예측 모델에 자동으로 [집중호우] 가중치가 임시 활성화되었습니다.`;
+                }
+                updateClimateSimulation();
             } else {
-                // 임계치 검사 및 시뮬레이션 시나리오 자동 연동 (특보 미발령 시 수치 기준 백업)
+                // 임계치 검사 및 시뮬레이션 시나리오 자동 연동 (특보/예보 위험 없을 시 실시간 수치 기준 백업)
                 if (temp >= 33.0) {
                     document.getElementById('event-heat').checked = true;
                     bannerEl.className = "max-w-2xl mx-auto mb-6 bg-red-500/10 border border-red-500/30 rounded-3xl py-2 px-4 flex items-center justify-center gap-3 text-xs text-red-600 shadow-md animate-pulse";
