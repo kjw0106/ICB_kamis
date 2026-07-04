@@ -211,17 +211,9 @@
                     
                     <!-- 단계 2: 예측 대상 기간 -->
                     <div>
-                        <label class="text-sm text-on-surface block mb-3 font-semibold">[단계 2] 예측 대상 기간 선택 (2026.07 ~ 2026.08 주 단위)</label>
+                        <label class="text-sm text-on-surface block mb-3 font-semibold">[단계 2] 예측 대상 기간 선택 (오늘 기준 주 단위)</label>
                         <select id="target-period" class="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg p-3 text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors" onchange="updateClimateSimulation()">
-                            <option value="W1">2026년 7월 1주차 (07.01 ~ 07.07)</option>
-                            <option value="W2">2026년 7월 2주차 (07.08 ~ 07.14)</option>
-                            <option value="W3">2026년 7월 3주차 (07.15 ~ 07.21)</option>
-                            <option value="W4">2026년 7월 4주차 (07.22 ~ 07.28)</option>
-                            <option value="W5">2026년 8월 1주차 (07.29 ~ 08.04)</option>
-                            <option value="W6">2026년 8월 2주차 (08.05 ~ 08.11)</option>
-                            <option value="W7">2026년 8월 3주차 (08.12 ~ 08.18)</option>
-                            <option value="W8">2026년 8월 4주차 (08.19 ~ 08.25)</option>
-                            <option value="W9">2026년 8월 5주차 (08.26 ~ 08.31)</option>
+                            <!-- JavaScript에서 접속일자 기준으로 동적 계산되어 주입됩니다 -->
                         </select>
                     </div>
                 </div>
@@ -556,6 +548,27 @@
         }
 
         function initDataLoaded() {
+            // 접속 시점을 기준으로 동적으로 상대 예측 기간 셀렉트박스를 채웁니다
+            const targetPeriodEl = document.getElementById('target-period');
+            const today = new Date();
+            let optionsHTML = '';
+            
+            for (let i = 1; i <= 8; i++) {
+                // 각 주차 범위 계산
+                const startDay = new Date(today);
+                startDay.setDate(today.getDate() + (i - 1) * 7);
+                const endDay = new Date(startDay);
+                endDay.setDate(startDay.getDate() + 6);
+                
+                const mmStart = String(startDay.getMonth() + 1).padStart(2, '0');
+                const ddStart = String(startDay.getDate()).padStart(2, '0');
+                const mmEnd = String(endDay.getMonth() + 1).padStart(2, '0');
+                const ddEnd = String(endDay.getDate()).padStart(2, '0');
+                
+                optionsHTML += `<option value="W${i}">${i}주 뒤 (${mmStart}.${ddStart} ~ ${mmEnd}.${ddEnd} 예측)</option>`;
+            }
+            targetPeriodEl.innerHTML = optionsHTML;
+
             const selectEl = document.getElementById('main-chart-select');
             selectEl.innerHTML = appData.map(item => `<option value="${item.id}">${item.name} (${item.unit})</option>`).join('');
             
@@ -1194,8 +1207,9 @@
             });
 
             const getWeekLabel = (wNum) => {
-                if (wNum <= 4) return `7월 ${wNum}주`;
-                return `8월 ${wNum - 4}주`;
+                const targetDay = new Date();
+                targetDay.setDate(targetDay.getDate() + (wNum - 1) * 7);
+                return `${wNum}주 뒤 (${String(targetDay.getMonth()+1).padStart(2,'0')}.${String(targetDay.getDate()).padStart(2,'0')})`;
             };
 
             let axisLabels = `
@@ -1407,8 +1421,9 @@
             // 분석 근거 동적 텍스트 구성
             let rationale = '';
             const getWeekLabel = (wNum) => {
-                if (wNum <= 4) return `7월 ${wNum}주`;
-                return `8월 ${wNum - 4}주`;
+                const targetDay = new Date();
+                targetDay.setDate(targetDay.getDate() + (wNum - 1) * 7);
+                return `${wNum}주 뒤 (${String(targetDay.getMonth()+1).padStart(2,'0')}.${String(targetDay.getDate()).padStart(2,'0')})`;
             };
             const weekText = getWeekLabel(weekIndex);
             
