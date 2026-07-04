@@ -32,9 +32,9 @@ app.use(express.json());
 // 정적 파일 서빙 (project_price_02 디렉토리를 루트로 설정)
 app.use(express.static(path.join(__dirname, '..')));
 
-// 루트 경로 접속 시 dashboard_260701.html 서빙
+// 루트 경로 접속 시 dashboard_260704.html 서빙 (최신 버전으로 교체)
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '..', 'dashboard_260701.html'));
+    res.sendFile(path.join(__dirname, '..', 'dashboard_260704.html'));
 });
 
 // 캐시 데이터 불러오기 헬퍼 함수
@@ -68,7 +68,8 @@ async function updateAllDataCache() {
     console.log('[Scheduler] Start updating weather and price cache data...');
     const result = {
         updatedAt: new Date().toISOString(),
-        weather: {}, // 지점별 날씨 객체로 변환
+        weather: {}, 
+        warnings: null, // 기상특보 캐시 필드 추가
         price: {},
         volume: null
     };
@@ -93,6 +94,18 @@ async function updateAllDataCache() {
         } catch (err) {
             console.error(`[Scheduler Error] Weather fetch failed for stn ${stnId}:`, err.message);
         }
+    }
+
+    // 1-2. 기상청 실시간 기상특보 API 수집 추가
+    try {
+        console.log(`[Scheduler] Fetching weather warnings...`);
+        const warningsUrl = `http://apis.data.go.kr/1360000/WthrWrnInfoService/getWthrWrnMsg?serviceKey=${encodeURIComponent(weatherKey)}&dataType=JSON&numOfRows=20&pageNo=1`;
+        const res = await fetch(warningsUrl);
+        if (res.ok) {
+            result.warnings = await res.json();
+        }
+    } catch (err) {
+        console.error('[Scheduler Error] Weather warnings fetch failed:', err.message);
     }
 
     // 2. 가락시장 반입물량 데이터 수집
@@ -196,10 +209,9 @@ app.get('/api/volume', async (req, res) => {
 
 /**
  * 3. 기상청 ASOS 일자료 API Proxy (캐시 우선 리턴)
- * GET /api/weather?stn_id=108
  */
 app.get('/api/weather', async (req, res) => {
-    const stnId = req.query.stn_id || '108'; // 기본 서울(108)
+    const stnId = req.query.stn_id || '108';
 
     const cache = getCachedData();
     if (cache && cache.weather && cache.weather[stnId]) {
@@ -231,6 +243,41 @@ app.get('/api/weather', async (req, res) => {
                 body: {
                     items: {
                         item: [{ taAvg: defaultTemps[stnId] || '24.5', rnDay: '0.0' }]
+                    }
+                }
+            }
+        });
+    }
+});
+
+/**
+ * 4. 기상청 기상특보 API Proxy (캐시 우선 리턴)
+ * GET /api/weather/warning
+ */
+app.get('/api/weather/warning', async (req, res) => {
+    const cache = getCachedData();
+    if (cache && cache.warnings) {
+        console.log(`[Cache Hit] Serving KMA Weather Warning Data`);
+        return res.json(cache.warnings);
+    }
+
+    try {
+        const weatherKey = process.env.WEATHER_API_KEY;
+        const targetUrl = `http://apis.data.go.kr/1360000/WthrWrnInfoService/getWthrWrnMsg?serviceKey=${encodeURIComponent(weatherKey)}&dataType=JSON&numOfRows=20&pageNo=1`;
+
+        console.log(`[Cache Miss] Fetching Realtime KMA Weather Warnings...`);
+        const response = await fetch(targetUrl);
+        if (!response.ok) throw new Error(`KMA Warning API responded with status ${response.status}`);
+        const data = await response.json();
+        res.json(data);
+    } catch (error) {
+        // 특보 없을 시의 Fallback 포맷
+        res.json({
+            response: {
+                header: { resultCode: "00", resultMsg: "FALLBACK_USED" },
+                body: {
+                    items: {
+                        item: [] // 빈 특보 리스트 리턴
                     }
                 }
             }
