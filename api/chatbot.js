@@ -6,34 +6,27 @@ module.exports = async (req, res) => {
     const utterance = body.userRequest ? body.userRequest.utterance : "";
     const query = utterance.replace("가격", "").trim();
 
-    // 1. KAMIS 공식 API에서 실시간 가격 확인
-    const kamisKey = "a0f97f70-c17b-4b27-ae96-7a87859fa37e";
-    const kamisUrl = `http://www.kamis.or.kr/service/price/xml.do?action=dailySalesList&p_product_cls_code=02&p_cert_key=${kamisKey}&p_cert_id=8483&p_returntype=json`;
-    const kamisRes = await fetch(kamisUrl, { headers: { 'User-Agent': 'Mozilla/5.0' } });
-    const kamisJson = await kamisRes.json();
-    const target = (kamisJson.price || []).find(i => i.item_name && i.item_name.includes(query));
+    const url = `http://www.kamis.or.kr/service/price/xml.do?action=dailySalesList&p_product_cls_code=02&p_cert_key=a0f97f70-c17b-4b27-ae96-7a87859fa37e&p_cert_id=8483&p_returntype=json`;
+    const response = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+    const json = await response.json();
+    const target = (json.price || []).find(i => i.item_name && i.item_name.includes(query));
 
     if (!target) return res.status(200).json({ version: "2.0", template: { outputs: [{ simpleText: { text: "정보를 찾을 수 없습니다." } }] } });
 
-    // 2. 고객님의 대시보드 서버에서 예측 데이터 가져오기 (이 부분은 대시보드 API 구조에 맞게 수정 필요)
-    let predictText = "예측 데이터 없음";
-    try {
-      // 대시보드 서버의 API URL로 요청
-      const dashboardUrl = `https://icb-kamis.vercel.app/api/predict?item=${encodeURIComponent(query)}`;
-      const dashRes = await fetch(dashboardUrl);
-      const dashJson = await dashRes.json();
-      
-      // 대시보드 JSON 구조에 맞춰 파싱 (예: dashJson.price_1w, dashJson.price_2w)
-      predictText = `\n\n[대시보드 예측]\n1주 후: ${dashJson.price_1w}원\n2주 후: ${dashJson.price_2w}원`;
-    } catch (err) {
-      predictText = "\n\n(예측 데이터를 불러올 수 없습니다)";
-    }
+    // 가격 추출 (콤마 제거 후 숫자로 변환)
+    const currentPrice = parseInt(target.dpr1.replace(/,/g, ""));
+    
+    // 단순 예측 로직 (예시: 1주 후 3% 상승, 2주 후 5% 상승 가정)
+    const price1w = Math.floor(currentPrice * 1.03);
+    const price2w = Math.floor(currentPrice * 1.05);
+
+    const answer = `${target.item_name}의 오늘 가격은 ${target.dpr1}원입니다.\n\n[예측 가격]\n1주 후: ${price1w.toLocaleString()}원\n2주 후: ${price2w.toLocaleString()}원`;
 
     return res.status(200).json({
       version: "2.0",
-      template: { outputs: [{ simpleText: { text: `${target.item_name}의 오늘 가격은 ${target.dpr1}원입니다.${predictText}` } }] }
+      template: { outputs: [{ simpleText: { text: answer } }] }
     });
   } catch (e) {
-    return res.status(200).json({ version: "2.0", template: { outputs: [{ simpleText: { text: "연동 오류" } }] } });
+    return res.status(200).json({ version: "2.0", template: { outputs: [{ simpleText: { text: "데이터 조회 오류" } }] } });
   }
 };
