@@ -1,31 +1,57 @@
-export default function handler(req, res) {
-  if (req.method === 'POST') {
-    // 1. 카카오 챗봇이 보낸 데이터에서 사용자의 발화(질문) 추출
+// api/chatbot.js
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).send('Method Not Allowed');
+  }
+
+  try {
+    // 1. 사용자 질문 가져오기
     const userRequest = req.body.userRequest.utterance;
     
-    let answer = "죄송해요, 어떤 가격을 찾으시는지 모르겠어요.";
-    
-    // 2. 간단한 조건문으로 답변 설정
-    if (userRequest.includes("배추")) {
-      answer = "오늘 배추 가격은 3,500원입니다."; // 여기에 실제 KAMIS 데이터 연동 로직 추가 가능
-    } else if (userRequest.includes("무")) {
-      answer = "오늘 무 가격은 1,200원입니다.";
+    // 2. 검색할 품목 키워드 추출 (질문에 포함된 단어 찾기)
+    const keywords = ["배추", "무", "마늘", "대파", "딸기", "양파"];
+    const foundKeyword = keywords.find(k => userRequest.includes(k));
+
+    if (!foundKeyword) {
+      return res.status(200).json({
+        version: "2.0",
+        template: {
+          outputs: [{ simpleText: { text: "죄송해요, 배추, 무, 마늘, 대파, 딸기, 양파 중에서만 확인 가능합니다." } }]
+        }
+      });
     }
 
-    // 3. 추출한 답변을 챗봇으로 전송
-    res.status(200).json({
-      "version": "2.0",
-      "template": {
-        "outputs": [
-          {
-            "simpleText": {
-              "text": answer
-            }
-          }
-        ]
+    // 3. KAMIS API 호출
+    const KAMIS_ID = "8483";
+    const KAMIS_KEY = "a0f97f70-c17b-4b27-ae96-7a87859fa37e";
+    const kamisUrl = `http://www.kamis.or.kr/service/price/xml.do?action=dailyPriceByCategoryList&p_product_cls_code=02&p_item_category_code=200&p_cert_key=${KAMIS_KEY}&p_cert_id=${KAMIS_ID}&p_returntype=json`;
+
+    const response = await fetch(kamisUrl);
+    const json = await response.json();
+
+    // 4. 데이터에서 해당 품목 가격 찾기
+    const items = json.data.item;
+    const targetItem = items.find(i => i.item_name.includes(foundKeyword));
+    
+    const priceText = targetItem 
+      ? `${targetItem.item_name}의 오늘 가격은 ${targetItem.dpr1}원입니다.`
+      : `${foundKeyword}의 가격 정보를 찾을 수 없습니다.`;
+
+    // 5. 카카오 챗봇 응답 반환
+    return res.status(200).json({
+      version: "2.0",
+      template: {
+        outputs: [{ simpleText: { text: priceText } }]
       }
     });
-  } else {
-    res.status(405).send('Method Not Allowed');
+
+  } catch (error) {
+    console.error(error);
+    return res.status(200).json({
+      version: "2.0",
+      template: {
+        outputs: [{ simpleText: { text: "가격 정보를 가져오는 중 오류가 발생했습니다." } }]
+      }
+    });
   }
 }
