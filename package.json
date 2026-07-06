@@ -1,7 +1,6 @@
 {
   "name": "agricultural-price-proxy",
   "version": "1.0.0",
-  "type": "module",
   "description": "Express proxy server for Agricultural Price Dashboard",
   "main": "src/server.js",
   "scripts": {
