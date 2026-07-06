@@ -26,8 +26,24 @@ export default async function handler(req, res) {
     const KAMIS_KEY = "a0f97f70-c17b-4b27-ae96-7a87859fa37e";
     const kamisUrl = `http://www.kamis.or.kr/service/price/xml.do?action=dailyPriceByCategoryList&p_product_cls_code=02&p_item_category_code=200&p_cert_key=${KAMIS_KEY}&p_cert_id=${KAMIS_ID}&p_returntype=json`;
 
-    const response = await fetch(kamisUrl);
-    const json = await response.json();
+    // KAMIS API 호출 부분만 아래로 교체하세요
+const response = await fetch(kamisUrl, {
+  headers: {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+  }
+});
+
+// 응답 상태 확인
+if (!response.ok) {
+  throw new Error(`KAMIS API 응답 실패: ${response.status}`);
+}
+const json = await response.json();
+
+// 응답 상태 확인
+if (!response.ok) {
+  throw new Error(`KAMIS API 응답 실패: ${response.status}`);
+}
+const json = await response.json();
 
     // 4. 데이터에서 해당 품목 가격 찾기
     const items = json.data.item;
