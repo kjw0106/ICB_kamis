@@ -60,12 +60,30 @@
 </head>
 <body class="min-h-screen p-6 bg-background text-on-surface">
     <!-- Header -->
-    <header class="max-w-7xl mx-auto mb-10 text-center py-4">
-        <h1 class="text-4xl font-space font-bold tracking-tight mb-2 text-primary">기후 변화에 따른 농산물 가격 변화 분석 및 예측 서비스</h1>
-        <p class="text-on-surface-variant mb-4 text-sm">학습 데이터 기간: 2021.01.01 ~ 2025.12.31</p>
+    <header class="max-w-7xl mx-auto mb-10 border-b border-outline-variant/15 pb-6">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+            <div class="text-left">
+                <h1 class="text-3xl md:text-4xl font-space font-bold tracking-tight mb-2 text-primary">기후 변화에 따른 농산물 가격 변화 분석 및 예측 서비스</h1>
+                <p class="text-on-surface-variant text-xs md:text-sm">학습 데이터 기간: 2021.01.01 ~ 2025.12.31</p>
+            </div>
+            
+            <div class="flex flex-wrap items-center gap-3 shrink-0">
+                <!-- 수동 데이터 강제 갱신 버튼 -->
+                <button onclick="triggerManualRefresh()" id="btn-refresh" class="flex items-center gap-1.5 px-4 py-2 md:py-2.5 text-xs font-semibold text-primary bg-primary/10 border border-primary/20 rounded-full hover:bg-primary/20 transition-all shadow-sm">
+                    <span class="material-symbols-outlined text-sm animate-none" id="icon-refresh">sync</span>
+                    실시간 데이터 강제 갱신
+                </button>
+                
+                <div class="inline-flex m3-card p-1 rounded-full bg-surface-container-low shadow-sm">
+                    <button onclick="switchTab('monitoring')" id="tab-monitoring" class="tab-active px-5 py-2 rounded-full font-semibold transition-all duration-300 text-xs md:text-sm">예측 시뮬레이터</button>
+                    <button onclick="switchTab('weather')" id="tab-weather" class="tab-inactive px-5 py-2 rounded-full font-semibold transition-all duration-300 text-xs md:text-sm">전국 기후 관측</button>
+                    <button onclick="switchTab('analysis')" id="tab-analysis" class="tab-inactive px-5 py-2 rounded-full font-semibold transition-all duration-300 text-xs md:text-sm">모델 신뢰도 검증</button>
+                </div>
+            </div>
+        </div>
         
         <!-- 기상청 ASOS 실시간 날씨 연동 현황판 -->
-        <div id="weather-banner" class="max-w-2xl mx-auto mb-6 bg-surface-container-low border border-outline-variant/15 rounded-3xl py-2 px-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-on-surface-variant shadow-sm break-keep">
+        <div id="weather-banner" class="max-w-2xl mx-auto bg-surface-container-low border border-outline-variant/15 rounded-3xl py-2 px-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-on-surface-variant shadow-sm break-keep">
             <div class="flex items-center gap-2 whitespace-nowrap">
                 <span class="flex h-2 w-2 relative">
                     <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
@@ -74,12 +92,6 @@
                 <span class="font-semibold text-primary">기상청 ASOS 실시간 연동:</span>
             </div>
             <span id="weather-info" class="text-center">기상 관측 정보 수신 중...</span>
-        </div>
-
-        <div class="inline-flex m3-card p-1 rounded-full bg-surface-container-low shadow-sm">
-            <button onclick="switchTab('monitoring')" id="tab-monitoring" class="tab-active px-6 py-2 rounded-full font-semibold transition-all duration-300">예측 시뮬레이터</button>
-            <button onclick="switchTab('weather')" id="tab-weather" class="tab-inactive px-6 py-2 rounded-full font-semibold transition-all duration-300">전국 기후 관측</button>
-            <button onclick="switchTab('analysis')" id="tab-analysis" class="tab-inactive px-6 py-2 rounded-full font-semibold transition-all duration-300">모델 신뢰도 검증</button>
         </div>
     </header>
 
@@ -556,7 +568,7 @@
             for (let i = 1; i <= 8; i++) {
                 // 각 주차 범위 계산
                 const startDay = new Date(today);
-                startDay.setDate(today.getDate() + (i - 1) * 7);
+                startDay.setDate(today.getDate() + i * 7);
                 const endDay = new Date(startDay);
                 endDay.setDate(startDay.getDate() + 6);
                 
@@ -592,12 +604,12 @@
                 
                 // 1. 로컬 백엔드 프록시 서버를 통해 KAMIS 가격 데이터 수집
                 const kamisRequests = categories.map(cat => {
-                    const url = `/api/price?cls_code=${clsCode}&category=${cat}`;
+                    const url = `http://localhost:3000/api/price?cls_code=${clsCode}&category=${cat}`;
                     return fetch(url).then(res => res.json()).catch(err => null);
                 });
 
                 // 2. 로컬 백엔드 프록시 서버를 통해 가락시장 반입물량 데이터 수집
-                const garakUrl = `/api/volume`;
+                const garakUrl = `http://localhost:3000/api/volume`;
                 
                 const fetchGarakVolume = async () => {
                     try {
@@ -623,6 +635,8 @@
                     if (res && res.data && res.data.item) {
                         const items = Array.isArray(res.data.item) ? res.data.item : [res.data.item];
                         items.forEach(item => {
+                            if (item.rank_code !== '04') return; // '상품' 등급만 필터링하여 중복 방지
+
                             const priceStr = item.dpr1 || item.dpr2;
                             if (!priceStr || priceStr === '-') return;
                             
@@ -645,10 +659,35 @@
                                 else if (name.includes('사과')) { displayUnit = '10개'; finalPrice = Math.round(bp / 4); }
                                 else if (name.includes('대파')) { displayUnit = '1단'; }
                                 else if (name.includes('쌀')) { displayUnit = '1kg'; finalPrice = Math.round(bp / 20); }
+                                else if (name.includes('고구마')) { displayUnit = '1kg'; finalPrice = Math.round(bp / 10); } // 10kg -> 1kg 환산
+                                else if (name.includes('감자')) { displayUnit = '1kg'; finalPrice = Math.round(bp / 20); } // 20kg -> 1kg 환산
+                                else if (name.includes('콩')) { displayUnit = '500g'; finalPrice = Math.round(bp / 80); } // 40kg -> 500g 환산
+                                else if (name.includes('양배추')) { displayUnit = '1통'; finalPrice = Math.round(bp / 3); } // 8kg(3통) -> 1통 환산
+                                else if (name.includes('시금치')) { displayUnit = '1단'; finalPrice = Math.round(bp / 10); } // 4kg(10단) -> 1단 환산
+                                else if (name.includes('상추')) { displayUnit = '100g'; finalPrice = Math.round(bp / 40); } // 4kg -> 100g 환산
+                                else if (name.includes('오이')) { displayUnit = '10개'; finalPrice = Math.round(bp / 10); } // 100개 -> 10개 환산
+                                else if (name.includes('양파')) { displayUnit = '1kg'; finalPrice = Math.round(bp / 15); } // 15kg -> 1kg 환산
+                                else if (name.includes('마늘')) { displayUnit = '1kg'; finalPrice = Math.round(bp / 20); } // 20kg -> 1kg 환산
+                                else if (name.includes('파프리카')) { displayUnit = '200g'; finalPrice = Math.round(bp / 25); } // 5kg -> 200g 환산
+                                else if (name.includes('배')) { displayUnit = '10개'; finalPrice = Math.round(bp / 3); } // 15kg(30개) -> 10개 환산
+                                else if (name.includes('방울토마토')) { displayUnit = '1kg'; }
                             } else {
                                 if (name.includes('배추')) { displayUnit = '10kg망'; }
                                 else if (name.includes('사과')) { displayUnit = '10kg상자'; }
                                 else if (name.includes('쌀')) { displayUnit = '20kg상자'; }
+                                else if (name.includes('고구마')) { displayUnit = '10kg상자'; finalPrice = Math.round(bp * 10); } // 1kg -> 10kg 환산
+                                else if (name.includes('감자')) { displayUnit = '20kg상자'; finalPrice = Math.round(bp * 200); } // 100g -> 20kg 환산
+                                else if (name.includes('콩')) { displayUnit = '35kg가마'; finalPrice = Math.round(bp * 70); } // 500g -> 35kg 환산
+                                else if (name.includes('양배추')) { displayUnit = '8kg망'; finalPrice = Math.round(bp * 3); } // 1포기 -> 8kg 환산
+                                else if (name.includes('시금치')) { displayUnit = '4kg상자'; finalPrice = Math.round(bp * 40); } // 100g -> 4kg 환산
+                                else if (name.includes('상추')) { displayUnit = '4kg상자'; finalPrice = Math.round(bp * 40); } // 100g -> 4kg 환산
+                                else if (name.includes('오이')) { displayUnit = '100개상자'; finalPrice = Math.round(bp * 10); } // 10개 -> 100개 환산
+                                else if (name.includes('양파')) { displayUnit = '15kg망'; finalPrice = Math.round(bp * 15); } // 1kg -> 15kg 환산
+                                else if (name.includes('대파')) { displayUnit = '1kg단 x 10'; finalPrice = Math.round(bp * 10); } // 1kg -> 10kg 환산
+                                else if (name.includes('마늘')) { displayUnit = '20kg가마'; finalPrice = Math.round(bp * 20); } // 1kg -> 20kg 환산
+                                else if (name.includes('파프리카')) { displayUnit = '5kg상자'; finalPrice = Math.round(bp * 25); } // 200g -> 5kg 환산
+                                else if (name.includes('배')) { displayUnit = '15kg상자'; finalPrice = Math.round(bp * 3); } // 10개 -> 15kg(30개) 환산
+                                else if (name.includes('방울토마토')) { displayUnit = '5kg상자'; finalPrice = Math.round(bp * 5); } // 1kg -> 5kg 환산
                             }
 
                             // 가락시장 API 결과가 있다면 실시간 반입물량을 추출하여 반영, 없으면 고유 표준 반입량 사용
@@ -754,7 +793,7 @@
         // 실시간 기상청 특보 데이터 가져오기 함수
         async function fetchWeatherWarnings() {
             try {
-                const res = await fetch('/api/weather/warning');
+                const res = await fetch('http://localhost:3000/api/weather/warning');
                 if (res.ok) {
                     const json = await res.json();
                     activeWarningsList = json.response?.body?.items?.item || json.response?.body?.items?.items?.item || [];
@@ -793,8 +832,8 @@
 
                 const weatherPromises = stationsList.map(stn => {
                     // 예보 API와 실시간 어제 날씨 API 병렬 호출
-                    const weatherFetch = fetch(`/api/weather?stn_id=${stn.id}`).then(res => res.json()).catch(() => null);
-                    const forecastFetch = fetch(`/api/weather/forecast?stn_id=${stn.id}`).then(res => res.json()).catch(() => null);
+                    const weatherFetch = fetch(`http://localhost:3000/api/weather?stn_id=${stn.id}`).then(res => res.json()).catch(() => null);
+                    const forecastFetch = fetch(`http://localhost:3000/api/weather/forecast?stn_id=${stn.id}`).then(res => res.json()).catch(() => null);
                     
                     return Promise.all([weatherFetch, forecastFetch])
                         .then(([weatherJson, forecastJson]) => {
@@ -955,12 +994,12 @@
             let changeRate = 0.0;
             if (scenario === 'heatwave') {
                 changeRate = isVeg ? -0.35 : (isFruit ? -0.20 : -0.05);
-                changeRate -= (weekIndex - 1) * 0.01;
+                changeRate -= weekIndex * 0.01;
             } else if (scenario === 'heavyrain') {
                 changeRate = isVeg ? -0.40 : (isFruit ? -0.15 : -0.10);
             } else if (scenario === 'drought') {
                 changeRate = isVeg ? -0.15 : (isFruit ? -0.30 : -0.12);
-                changeRate -= (weekIndex - 1) * 0.015;
+                changeRate -= weekIndex * 0.015;
             } else if (scenario === 'snow') {
                 changeRate = isVeg ? -0.25 : -0.05;
             }
@@ -976,7 +1015,7 @@
             const currentPrice = item.basePrice;
             const weekIndex = parseInt(period.replace('W', '')) || 1;
             
-            const yearsElapsed = 0.5 + (weekIndex - 1) * (0.17 / 8); 
+            const yearsElapsed = 0.5 + weekIndex * (0.17 / 8); 
             const inflationMultiplier = Math.pow(1.035, yearsElapsed);
 
             let seasonalIndex = 1.0;
@@ -1264,7 +1303,7 @@
 
             const getWeekLabel = (wNum) => {
                 const targetDay = new Date();
-                targetDay.setDate(targetDay.getDate() + (wNum - 1) * 7);
+                targetDay.setDate(targetDay.getDate() + wNum * 7);
                 return `${wNum}주 뒤 (${String(targetDay.getMonth()+1).padStart(2,'0')}.${String(targetDay.getDate()).padStart(2,'0')})`;
             };
 
@@ -1478,7 +1517,7 @@
             let rationale = '';
             const getWeekLabel = (wNum) => {
                 const targetDay = new Date();
-                targetDay.setDate(targetDay.getDate() + (wNum - 1) * 7);
+                targetDay.setDate(targetDay.getDate() + wNum * 7);
                 return `${wNum}주 뒤 (${String(targetDay.getMonth()+1).padStart(2,'0')}.${String(targetDay.getDate()).padStart(2,'0')})`;
             };
             const weekText = getWeekLabel(weekIndex);
@@ -1492,7 +1531,7 @@
                 if (isVeg) {
                     rationale = volumeReportHeader + `[경보: 폭염] 채소류인 ${item.name}은(는) 엽온 및 대기 온도 상승에 매우 예민한 수분 구조를 가집니다. 특히 ${weekText}의 폭염 지속 시 엽면 손상 및 무름병 피해가 급격히 확산되어 수확 및 출하가 마비됩니다. 이에 따라 폭염 충격 계수(${finalShock.toFixed(2)}배)가 중첩 적용되어 최종 ${((predictedVal - currentVal)/currentVal*100).toFixed(1)}%의 강력한 폭등세를 유발합니다.`;
                 } else if (isFruit) {
-                    rationale = volumeReportHeader + `[주의: 폭염] 과일류인 ${item.name}은(는) 고온에 의한 일소(햇볕 뎀) 피해 및 생육 촉진에 의한 조기 낙과가 우려됩니다. 상품 등급(대과) 비중 하락으로 가격이 약 상승하는 기조를 띱니다.`;
+                    rationale = volumeReportHeader + `[주의: 폭염] 과일류인 ${item.name}은(는) 고온에 의한 일소(햇볕 뎀) 피해 및 생육 촉진에 의한 조기 낙과가 우려됩니다. 상품 등급(대과) 비중 하락으로 가격이 약 상승하는 기조를 뱁니다.`;
                 } else {
                     rationale = volumeReportHeader + `[비교적 안전] 식량작물인 ${item.name}은(는) 공공비축 유통 물량 및 상대적으로 높은 기후 회복 탄력성 덕에 폭염에 따른 직접적인 단기 소매 충격는 최소화됩니다.`;
                 }
@@ -1533,7 +1572,7 @@
             let hasRealTime = false;
 
             try {
-                const res = await fetch(`/api/weather?stn_id=${currentStnId}`);
+                const res = await fetch(`http://localhost:3000/api/weather?stn_id=${currentStnId}`);
                 if (res.ok) {
                     const json = await res.json();
                     const item = json.response?.body?.items?.item?.[0] || json.response?.body?.items?.items?.item?.[0];
@@ -1562,7 +1601,7 @@
             // 7일 예보 분석 데이터 가져오기
             let forecastTrigger = null;
             try {
-                const forecastRes = await fetch(`/api/weather/forecast?stn_id=${currentStnId}`);
+                const forecastRes = await fetch(`http://localhost:3000/api/weather/forecast?stn_id=${currentStnId}`);
                 if (forecastRes.ok) {
                     const forecastJson = await forecastRes.json();
                     const list = forecastJson?.forecast || [];
@@ -1622,6 +1661,45 @@
                     bannerEl.className = "max-w-2xl mx-auto mb-6 bg-surface-container-low border border-outline-variant/15 rounded-3xl py-2 px-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-on-surface-variant shadow-sm break-keep";
                     updateClimateSimulation();
                 }
+            }
+        }
+
+        async function triggerManualRefresh() {
+            const btn = document.getElementById('btn-refresh');
+            const icon = document.getElementById('icon-refresh');
+            
+            if (btn.disabled) return;
+            
+            // 로딩 상태 변환
+            btn.disabled = true;
+            btn.classList.add('opacity-60', 'cursor-not-allowed');
+            icon.classList.add('animate-spin');
+            btn.innerHTML = `<span class="material-symbols-outlined text-sm animate-spin" id="icon-refresh">sync</span> 데이터 동기화 중...`;
+
+            try {
+                console.log('[Manual Refresh] Triggering server cache force update...');
+                const res = await fetch('http://localhost:3000/api/cache/refresh');
+                if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
+                const data = await res.json();
+                
+                if (data.status === 'SUCCESS') {
+                    console.log('[Manual Refresh] Cache successfully updated. Re-fetching data...');
+                    // 화면 데이터 전체 비동기식 리로드
+                    await fetchWeatherWarnings();
+                    await fetchRealTimeData();
+                    await fetchWeatherData();
+                    alert('실시간 농산물 가격 및 날씨 정보가 성공적으로 갱신되었습니다!');
+                } else {
+                    throw new Error(data.error || '알 수 없는 서버 에러');
+                }
+            } catch (e) {
+                console.error('[Manual Refresh Error]:', e);
+                alert(`데이터 동기화 실패: ${e.message}\n(백엔드 서버 구동 상태 및 네트워크를 확인해 주세요)`);
+            } finally {
+                // 원래 상태로 환원
+                btn.disabled = false;
+                btn.classList.remove('opacity-60', 'cursor-not-allowed');
+                btn.innerHTML = `<span class="material-symbols-outlined text-sm animate-none" id="icon-refresh">sync</span> 실시간 데이터 강제 갱신`;
             }
         }
 
