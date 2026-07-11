@@ -793,12 +793,12 @@
         let activeWeatherStation = { id: '108', name: '서울' };
         let activeWarningsList = []; // 실시간 기상 특보 데이터 목록 저장 변수
         const stationsList = [
-            { id: '108', name: '서울', desc: '도심지 물류 허브', reg: '서울' },
-            { id: '100', name: '대관령', desc: '고랭지 배추/채소 산지', reg: '대관령' },
-            { id: '133', name: '대전', desc: '중부 노지 작물지대', reg: '대전' },
-            { id: '156', name: '광주', desc: '호남 곡창/원예 산지', reg: '광주' },
-            { id: '143', name: '대구', desc: '영남 과수/사과 주산지', reg: '대구' },
-            { id: '184', name: '제주', desc: '감귤/시설 월동 산지', reg: '제주' }
+            { id: '108', name: '서울', desc: '도심지 물류 허브', reg: '서울', lat: 37.5665, lon: 126.9780 },
+            { id: '100', name: '대관령', desc: '고랭지 배추/채소 산지', reg: '대관령', lat: 37.6771, lon: 128.7183 },
+            { id: '133', name: '대전', desc: '중부 노지 작물지대', reg: '대전', lat: 36.3504, lon: 127.3845 },
+            { id: '156', name: '광주', desc: '호남 곡창/원예 산지', reg: '광주', lat: 35.1595, lon: 126.8526 },
+            { id: '143', name: '대구', desc: '영남 과수/사과 주산지', reg: '대구', lat: 35.8714, lon: 128.6014 },
+            { id: '184', name: '제주', desc: '감귤/시설 월동 산지', reg: '제주', lat: 33.4996, lon: 126.5312 }
         ];
 
         function switchTab(tabId) {
@@ -818,13 +818,20 @@
             }
         }
 
-        // 실시간 기상청 특보 데이터 가져오기 함수
+        // 실시간 기상청 특보 데이터 가져오기 함수 (직접 호출)
         async function fetchWeatherWarnings() {
             try {
-                const res = await fetch('http://localhost:3000/api/weather/warning');
+                const apiKey = "0747f42fadafc9ab4fa671fb612517fd08ef177797c8c97be0b094c4f565316c";
+                const today = new Date();
+                const dateStr = today.getFullYear() + String(today.getMonth()+1).padStart(2,'0') + String(today.getDate()).padStart(2,'0');
+                
+                // 공공데이터포털 기상특보조회 API
+                const url = `http://apis.data.go.kr/1360000/WthrWrnInfoService/getWthrWrnList?serviceKey=${apiKey}&pageNo=1&numOfRows=10&dataType=JSON&stnId=108`;
+                
+                const res = await fetch(url);
                 if (res.ok) {
                     const json = await res.json();
-                    activeWarningsList = json.response?.body?.items?.item || json.response?.body?.items?.items?.item || [];
+                    activeWarningsList = json.response?.body?.items?.item || [];
                     console.log('[Warnings] Loaded warnings:', activeWarningsList.length);
                 }
             } catch (e) {
@@ -859,18 +866,27 @@
                 await fetchWeatherWarnings();
 
                 const weatherPromises = stationsList.map(stn => {
-                    // 예보 API와 실시간 어제 날씨 API 병렬 호출
-                    const weatherFetch = fetch(`http://localhost:3000/api/weather?stn_id=${stn.id}`).then(res => res.json()).catch(() => null);
-                    const forecastFetch = fetch(`http://localhost:3000/api/weather/forecast?stn_id=${stn.id}`).then(res => res.json()).catch(() => null);
+                    const apiKey = "0747f42fadafc9ab4fa671fb612517fd08ef177797c8c97be0b094c4f565316c";
+                    
+                    // 종관기상관측(ASOS) '일자료(Daily)'는 보통 전날 기준으로 완성되므로 어제 날짜로 세팅
+                    const yesterday = new Date();
+                    yesterday.setDate(yesterday.getDate() - 1);
+                    const dateStr = yesterday.getFullYear() + String(yesterday.getMonth()+1).padStart(2,'0') + String(yesterday.getDate()).padStart(2,'0');
+
+                    // AsosDalyInfoService (종관기상관측 일자료) 호출
+                    const asosUrl = `http://apis.data.go.kr/1360000/AsosDalyInfoService/getWthrDataList?serviceKey=${apiKey}&pageNo=1&numOfRows=1&dataType=JSON&dataCd=ASOS&dateCd=DAY&stnIds=${stn.id}&startDt=${dateStr}&endDt=${dateStr}`;
+                    
+                    const weatherFetch = fetch(asosUrl).then(res => res.json()).catch(() => null);
+                    const forecastFetch = Promise.resolve(null); 
                     
                     return Promise.all([weatherFetch, forecastFetch])
                         .then(([weatherJson, forecastJson]) => {
-                            const item = weatherJson?.response?.body?.items?.item?.[0] || weatherJson?.response?.body?.items?.items?.item?.[0];
+                            const item = weatherJson?.response?.body?.items?.item?.[0];
                             return {
                                 ...stn,
-                                temp: item ? parseFloat(item.taAvg || '24.5') : 24.5,
-                                rain: item ? parseFloat(item.rnDay || '0.0') : 0.0,
-                                forecastList: forecastJson?.forecast || []
+                                temp: item ? parseFloat(item.avgTa || '24.5') : 24.5, // 일평균기온
+                                rain: item ? parseFloat(item.sumRn || '0.0') : 0.0,   // 일강수량
+                                forecastList: []
                             };
                         })
                         .catch(() => {
