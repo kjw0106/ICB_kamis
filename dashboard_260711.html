@@ -55,7 +55,10 @@
         }
         .tab-inactive { opacity: 0.7; border-color: transparent; color: #3c4a3d; }
         input[type="radio"]:checked + label { background-color: #e5eeff; border-color: #006d32; color: #006d32; box-shadow: 0 2px 8px rgba(0,109,50,0.1); }
-        ::-webkit-scrollbar { display: none; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
 <body class="min-h-screen p-6 bg-background text-on-surface">
@@ -289,6 +292,15 @@
             </section>
 
             <!-- 가격 품목 리스트 -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
+                <h3 class="text-lg font-space font-semibold text-on-surface">품목 시뮬레이션 상세</h3>
+                <div class="inline-flex bg-surface-container-low p-1 rounded-lg border border-outline-variant/10 text-xs shadow-sm">
+                    <button onclick="setCategoryFilter('all')" id="btn-cat-all" class="px-3 py-1.5 rounded-md font-semibold bg-[#e5eeff] border border-outline-variant/20 text-primary transition-all">전체</button>
+                    <button onclick="setCategoryFilter('식량작물')" id="btn-cat-grain" class="px-3 py-1.5 rounded-md font-semibold text-on-surface-variant hover:text-primary transition-all">식량작물</button>
+                    <button onclick="setCategoryFilter('채소류')" id="btn-cat-veg" class="px-3 py-1.5 rounded-md font-semibold text-on-surface-variant hover:text-primary transition-all">채소류</button>
+                    <button onclick="setCategoryFilter('과일류')" id="btn-cat-fruit" class="px-3 py-1.5 rounded-md font-semibold text-on-surface-variant hover:text-primary transition-all">과일류</button>
+                </div>
+            </div>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="item-cards-container">
                 <!-- JS 렌더링 -->
             </div>
@@ -538,6 +550,24 @@
         let isLoading = true;
         let selectedItemId = null;
         let activePriceClass = 'retail';
+        let activeCategoryFilter = 'all';
+
+        function setCategoryFilter(cat) {
+            activeCategoryFilter = cat;
+            const btnKeys = ['all', 'grain', 'veg', 'fruit'];
+            const matchMap = { 'all': 'all', 'grain': '식량작물', 'veg': '채소류', 'fruit': '과일류' };
+            
+            btnKeys.forEach(c => {
+                const btn = document.getElementById(`btn-cat-${c}`);
+                if (!btn) return;
+                if (matchMap[c] === cat) {
+                    btn.className = "px-3 py-1.5 rounded-md font-semibold bg-[#e5eeff] border border-outline-variant/20 text-primary transition-all";
+                } else {
+                    btn.className = "px-3 py-1.5 rounded-md font-semibold text-on-surface-variant hover:text-primary transition-all";
+                }
+            });
+            updateClimateSimulation();
+        }
 
         // 가락시장 주요 품목 표준 반입물량 매핑 (CORS 실패 대비 기본값)
         const GARAK_BASE_VOLUMES = {
@@ -739,7 +769,7 @@
                 });
                 
                 if (appData.length === 0) throw new Error("API Data Empty");
-                appData = appData.slice(0, 15);
+                // appData = appData.slice(0, 15); // 사용자 요청으로 15개 제한 해제
                 initDataLoaded();
             } catch (error) {
                 console.error("CORS 또는 API 에러, 백업 Mock Data 사용", error);
@@ -1163,6 +1193,8 @@
             let mainItem = null;
 
             appData.forEach((item, idx) => {
+                if (activeCategoryFilter !== 'all' && !item.category.includes(activeCategoryFilter)) return;
+
                 const pastPrices = item.pastPrices;
                 const currentPrice = item.basePrice;
                 const predictedPrice = calculatePredictedPrice(item, scenario, exScenario, period, idx);
