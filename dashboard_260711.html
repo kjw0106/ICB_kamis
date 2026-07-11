@@ -877,16 +877,37 @@
                     const asosUrl = `http://apis.data.go.kr/1360000/AsosDalyInfoService/getWthrDataList?serviceKey=${apiKey}&pageNo=1&numOfRows=1&dataType=JSON&dataCd=ASOS&dateCd=DAY&stnIds=${stn.id}&startDt=${dateStr}&endDt=${dateStr}`;
                     
                     const weatherFetch = fetch(asosUrl).then(res => res.json()).catch(() => null);
-                    const forecastFetch = Promise.resolve(null); 
+                    
+                    // 7일 중기 예보는 복잡한 맵핑 없이 Open-Meteo 무료 API로 대체
+                    const forecastUrl = `https://api.open-meteo.com/v1/forecast?latitude=${stn.lat}&longitude=${stn.lon}&daily=temperature_2m_max,weathercode&timezone=Asia%2FSeoul`;
+                    const forecastFetch = fetch(forecastUrl).then(res => res.json()).catch(() => null); 
                     
                     return Promise.all([weatherFetch, forecastFetch])
                         .then(([weatherJson, forecastJson]) => {
                             const item = weatherJson?.response?.body?.items?.item?.[0];
+                            
+                            let parsedForecastList = [];
+                            if (forecastJson?.daily) {
+                                // 향후 7일 파싱
+                                for(let i=0; i<7; i++) {
+                                    const code = forecastJson.daily.weathercode[i];
+                                    let skyStr = '맑음';
+                                    if (code >= 50) skyStr = '비';
+                                    else if (code >= 2) skyStr = '구름많음';
+
+                                    parsedForecastList.push({
+                                        dayOffset: i + 1,
+                                        temp: Math.round(forecastJson.daily.temperature_2m_max[i]),
+                                        sky: skyStr
+                                    });
+                                }
+                            }
+
                             return {
                                 ...stn,
                                 temp: item ? parseFloat(item.avgTa || '24.5') : 24.5, // 일평균기온
                                 rain: item ? parseFloat(item.sumRn || '0.0') : 0.0,   // 일강수량
-                                forecastList: []
+                                forecastList: parsedForecastList
                             };
                         })
                         .catch(() => {
