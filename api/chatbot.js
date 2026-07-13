@@ -1,35 +1,29 @@
-const axios = require('axios');
+const fetch = require('node-fetch'); // 기존 코드의 fetch 기반 유지
 
 module.exports = async (req, res) => {
+  if (req.method !== 'POST') return res.status(405).end();
+
   try {
-    // 1. 카카오 챗봇 요청 데이터 확인 및 예외 처리
-    if (!req.body || !req.body.action || !req.body.action.params) {
-      return res.status(400).json({ version: "2.0", template: { outputs: [{ simpleText: { text: "잘못된 요청입니다." } }] } });
-    }
+    const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+    const utterance = body.userRequest ? body.userRequest.utterance : "";
+    const query = utterance.replace("가격", "").trim();
 
-    // 카카오 챗봇에서 전달받은 농산물 파라미터 추출
-    const { cropName, categoryCode } = req.body.action.params;
-
-    if (!cropName) {
-      return res.status(200).json({ version: "2.0", template: { outputs: [{ simpleText: { text: "농산물 이름을 파라미터로 전달받지 못했습니다." } }] } });
-    }
-
-    // 2. KAMIS API 실시간 업데이트 주기를 반영한 한국 시간(KST) 날짜 계산
+    // 1. KAMIS API 실시간 업데이트 주기를 반영한 한국 시간(KST) 날짜 계산
     const now = new Date();
     const kst = new Date(now.getTime() + (9 * 60 * 60 * 1000)); // Vercel 서버(UTC)와 한국(KST) 시차 보정
     
-    let day = kst.getDay(); // 0: 일요일, 1: 월요일 ... 6: 토요일
+    let day = kst.getDay(); 
     let hours = kst.getHours();
 
-    // 주말이나 평일 오후 2시 이전에는 데이터 공백을 방지하기 위해 가장 최근 영업일 데이터 요청
+    // 주말이나 평일 오후 2시 이전에는 전 영업일 데이터 요청
     if (day === 0) { 
-      kst.setDate(kst.getDate() - 2); // 일요일 -> 금요일 데이터
+      kst.setDate(kst.getDate() - 2); 
     } else if (day === 6) { 
-      kst.setDate(kst.getDate() - 1); // 토요일 -> 금요일 데이터
+      kst.setDate(kst.getDate() - 1); 
     } else if (day === 1 && hours < 14) { 
-      kst.setDate(kst.getDate() - 3); // 월요일 오후 2시 전 -> 금요일 데이터
+      kst.setDate(kst.getDate() - 3); 
     } else if (hours < 14) { 
-      kst.setDate(kst.getDate() - 1); // 화~금 오후 2시 전 -> 어제 데이터
+      kst.setDate(kst.getDate() - 1); 
     }
 
     const year = kst.getFullYear();
@@ -37,67 +31,35 @@ module.exports = async (req, res) => {
     const date = String(kst.getDate()).padStart(2, '0');
     const targetDate = `${year}-${month}-${date}`;
 
-    // 환경 변수에서 KAMIS API 키 로드
-    const KAMIS_API_KEY = process.env.KAMIS_API_KEY; 
-
-    // 3. KAMIS API URL 조립 (대시보드와 일치하도록 등급 p_grade_code=04 고정 추가)
-    const url = `http://www.kamis.or.kr/service/price/xml.do?action=dailyPriceByCategoryList`
-      + `&p_product_cls_code=01`
-      + `&p_country_code=1101`
-      + `&p_regday=${targetDate}`
-      + `&p_convert_kg_yn=N`
-      + `&p_item_category_code=${categoryCode || '100'}` // 소매 카테고리 기본값 적용
-      + `&p_grade_code=04` // 대시보드 기준인 '상품' 등급 고정
-      + `&p_cert_key=${KAMIS_API_KEY}`
-      + `&p_cert_id=2752`
-      + `&p_returntype=json`;
-
-    // 4. KAMIS API 호출
-    const response = await axios.get(url);
-    const data = response.data;
-
-    // API 응답 데이터 점검
-    if (!data || !data.data || !Array.isArray(data.data.item)) {
-      return res.status(200).json({ version: "2.0", template: { outputs: [{ simpleText: { text: `${cropName}의 정보를 찾을 수 없습니다.` } }] } });
-    }
-
-    // 호출한 품목 이름과 정확히 매칭되는 아이템 찾기
-    const items = data.data.item;
-    const matchedItem = items.find(item => item.item_name && item.item_name.includes(cropName));
-
-    if (!matchedItem) {
-      return res.status(200).json({ version: "2.0", template: { outputs: [{ simpleText: { text: `${cropName}의 실시간 가격 정보를 찾을 수 없습니다.` } }] } });
-    }
-
-    // 5. 카카오 챗봇 포맷으로 최종 응답 전송
-    const replyText = `${matchedItem.item_name}/${matchedItem.kind_name}의 오늘 가격은 ${matchedItem.dpr1}원입니다.\n(조회일자: ${targetDate}, 등급: 상품)`;
+    // 2. KAMIS API URL 조립 (기존 url 구조 유지 + p_regday 반영 및 대시보드 기준 p_grade_code=04 추가)
+    const url = `http://www.kamis.or.kr/service/price/xml.do?action=dailySalesList&p_product_cls_code=02&p_regday=${targetDate}&p_grade_code=04&p_cert_key=a0f97f70-c17b-4b27-ae96-7a87859fa37e&p_cert_id=8483&p_returntype=json`;
     
+    const response = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+    const json = await response.json();
+    
+    // 기존 데이터 구조 변경 없이 매칭 처리
+    const priceData = json.price || [];
+    const target = (Array.isArray(priceData) ? priceData : []).find(i => i && i.item_name && i.item_name.includes(query));
+
+    if (!target) {
+      return res.status(200).json({ version: "2.0", template: { outputs: [{ simpleText: { text: "정보를 찾을 수 없습니다." } }] } });
+    }
+
+    // 3. 기존 가격 추출 및 단순 예측 로직 그대로 유지
+    const currentPrice = parseInt(target.dpr1.replace(/,/g, ""));
+    const price1w = Math.floor(currentPrice * 1.03);
+    const price2w = Math.floor(currentPrice * 1.05);
+
+    // 4. 기존 답변 포맷 그대로 출력 (조회 기준 안내 멘트만 살짝 추가)
+    const answer = `${target.item_name}의 오늘 가격은 ${target.dpr1}원입니다.\n\n[예측 가격]\n1주 후: ${price1w.toLocaleString()}원\n2주 후: ${price2w.toLocaleString()}원\n(조회일자: ${targetDate}, 상품 등급 기준)`;
+
     return res.status(200).json({
       version: "2.0",
-      template: {
-        outputs: [
-          {
-            simpleText: {
-              text: replyText
-            }
-          }
-        ]
-      }
+      template: { outputs: [{ simpleText: { text: answer } }] }
     });
 
-  } catch (error) {
-    console.error("챗봇 스킬 서버 에러 발생:", error);
-    return res.status(500).json({
-      version: "2.0",
-      template: {
-        outputs: [
-          {
-            simpleText: {
-              text: "서버 내부 오류가 발생했습니다. 잠시 후 다시 시도해 주세요."
-            }
-          }
-        ]
-      }
-    });
+  } catch (e) {
+    console.error(e);
+    return res.status(200).json({ version: "2.0", template: { outputs: [{ simpleText: { text: "데이터 조회 오류" } }] } });
   }
 };
