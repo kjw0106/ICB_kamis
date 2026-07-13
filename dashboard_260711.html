@@ -658,7 +658,7 @@
             document.getElementById('item-cards-container').innerHTML = '<div class="col-span-full text-center py-10 text-primary font-semibold">농산물 유통망 API 융합 통신 중...</div>';
             try {
                 const categories = ['100', '200', '400'];
-                const clsCode = activePriceClass === 'retail' ? '02' : '01';
+                const clsCode = activePriceClass === 'retail' ? '01' : '02';
                 
                 // 1. 로컬 백엔드 프록시 서버를 통해 KAMIS 가격 데이터 수집
                 const kamisRequests = categories.map(cat => {
@@ -698,8 +698,27 @@
                             const priceStr = item.dpr1 || item.dpr2;
                             if (!priceStr || priceStr === '-') return;
                             
-                            const name = item.item_name || '';
-                            const kind = item.kind_name || '';
+                            let name = item.item_name || '';
+                            let kind = item.kind_name || '';
+                            let displayUnit = item.unit || '';
+                            
+                            // 1. kind_name 안에 단위(unit)가 포함되어 있다면 제거 (예: "밤(1kg)" -> "밤", "20kg" -> "")
+                            if (kind && displayUnit) {
+                                // 정규식 이스케이프 에러 방지를 위해 단순 치환 사용
+                                kind = kind.replace(displayUnit, '').trim();
+                                kind = kind.replace('()', '').trim();
+                                if (kind === '(' || kind === ')') kind = '';
+                                if (kind.startsWith('(') && kind.endsWith(')')) {
+                                    const inner = kind.slice(1, -1).trim();
+                                    if (!inner) kind = '';
+                                }
+                            }
+                            
+                            // 이름과 종류가 같거나 이름에 종류가 이미 포함된 경우 중복 표기 방지 (예: 사과(사과), 포도(포도))
+                            if (kind && (name === kind || name.includes(kind))) {
+                                kind = '';
+                            }
+                            
                             if (name.includes('수입') || name.includes('수입산') || kind.includes('수입') || kind.includes('수입산') ||
                                 name.includes('바나나') || name.includes('아보카도') || name.includes('오렌지') || 
                                 name.includes('레몬') || name.includes('체리') || name.includes('망고') || name.includes('자몽') || name.includes('파인애플')) {
@@ -710,43 +729,8 @@
                             if (isNaN(bp) || bp <= 0) return;
                             const sens = getSensitivityByCategory(categories[idx]);
                             
-                            let displayUnit = item.unit;
                             let finalPrice = bp;
-                            if (activePriceClass === 'retail') {
-                                if (name.includes('배추')) { displayUnit = '1포기'; finalPrice = Math.round(bp / 3); }
-                                else if (name.includes('사과')) { displayUnit = '10개'; finalPrice = Math.round(bp / 4); }
-                                else if (name.includes('대파')) { displayUnit = '1단'; }
-                                else if (name.includes('쌀')) { displayUnit = '1kg'; finalPrice = Math.round(bp / 20); }
-                                else if (name.includes('고구마')) { displayUnit = '1kg'; finalPrice = Math.round(bp / 10); } // 10kg -> 1kg 환산
-                                else if (name.includes('감자')) { displayUnit = '1kg'; finalPrice = Math.round(bp / 20); } // 20kg -> 1kg 환산
-                                else if (name.includes('콩')) { displayUnit = '500g'; finalPrice = Math.round(bp / 80); } // 40kg -> 500g 환산
-                                else if (name.includes('양배추')) { displayUnit = '1통'; finalPrice = Math.round(bp / 3); } // 8kg(3통) -> 1통 환산
-                                else if (name.includes('시금치')) { displayUnit = '1단'; finalPrice = Math.round(bp / 10); } // 4kg(10단) -> 1단 환산
-                                else if (name.includes('상추')) { displayUnit = '100g'; finalPrice = Math.round(bp / 40); } // 4kg -> 100g 환산
-                                else if (name.includes('오이')) { displayUnit = '10개'; finalPrice = Math.round(bp / 10); } // 100개 -> 10개 환산
-                                else if (name.includes('양파')) { displayUnit = '1kg'; finalPrice = Math.round(bp / 15); } // 15kg -> 1kg 환산
-                                else if (name.includes('마늘')) { displayUnit = '1kg'; finalPrice = Math.round(bp / 20); } // 20kg -> 1kg 환산
-                                else if (name.includes('파프리카')) { displayUnit = '200g'; finalPrice = Math.round(bp / 25); } // 5kg -> 200g 환산
-                                else if (name.includes('배')) { displayUnit = '10개'; finalPrice = Math.round(bp / 3); } // 15kg(30개) -> 10개 환산
-                                else if (name.includes('방울토마토')) { displayUnit = '1kg'; }
-                            } else {
-                                if (name.includes('배추')) { displayUnit = '10kg망'; }
-                                else if (name.includes('사과')) { displayUnit = '10kg상자'; }
-                                else if (name.includes('쌀')) { displayUnit = '20kg상자'; }
-                                else if (name.includes('고구마')) { displayUnit = '10kg상자'; finalPrice = Math.round(bp * 10); } // 1kg -> 10kg 환산
-                                else if (name.includes('감자')) { displayUnit = '20kg상자'; finalPrice = Math.round(bp * 200); } // 100g -> 20kg 환산
-                                else if (name.includes('콩')) { displayUnit = '35kg가마'; finalPrice = Math.round(bp * 70); } // 500g -> 35kg 환산
-                                else if (name.includes('양배추')) { displayUnit = '8kg망'; finalPrice = Math.round(bp * 3); } // 1포기 -> 8kg 환산
-                                else if (name.includes('시금치')) { displayUnit = '4kg상자'; finalPrice = Math.round(bp * 40); } // 100g -> 4kg 환산
-                                else if (name.includes('상추')) { displayUnit = '4kg상자'; finalPrice = Math.round(bp * 40); } // 100g -> 4kg 환산
-                                else if (name.includes('오이')) { displayUnit = '100개상자'; finalPrice = Math.round(bp * 10); } // 10개 -> 100개 환산
-                                else if (name.includes('양파')) { displayUnit = '15kg망'; finalPrice = Math.round(bp * 15); } // 1kg -> 15kg 환산
-                                else if (name.includes('대파')) { displayUnit = '1kg단 x 10'; finalPrice = Math.round(bp * 10); } // 1kg -> 10kg 환산
-                                else if (name.includes('마늘')) { displayUnit = '20kg가마'; finalPrice = Math.round(bp * 20); } // 1kg -> 20kg 환산
-                                else if (name.includes('파프리카')) { displayUnit = '5kg상자'; finalPrice = Math.round(bp * 25); } // 200g -> 5kg 환산
-                                else if (name.includes('배')) { displayUnit = '15kg상자'; finalPrice = Math.round(bp * 3); } // 10개 -> 15kg(30개) 환산
-                                else if (name.includes('방울토마토')) { displayUnit = '5kg상자'; finalPrice = Math.round(bp * 5); } // 1kg -> 5kg 환산
-                            }
+                            // 단위 환산 로직 삭제: KAMIS 원본 데이터(단위, 가격) 사용
 
                             // 가락시장 API 결과가 있다면 실시간 반입물량을 추출하여 반영, 없으면 고유 표준 반입량 사용
                             let volume = getBaseVolumeByName(name);
@@ -772,53 +756,12 @@
                 // appData = appData.slice(0, 15); // 사용자 요청으로 15개 제한 해제
                 initDataLoaded();
             } catch (error) {
-                console.error("CORS 또는 API 에러, 백업 Mock Data 사용", error);
-                useMockData();
+                console.error("CORS 또는 API 에러 발생", error);
+                document.getElementById('item-cards-container').innerHTML = '<div class="col-span-full text-center py-10 text-red-600 font-semibold">데이터 연동 실패: 서버 연결 또는 데이터 파싱 오류가 발생했습니다.</div>';
             }
         }
 
-        function useMockData() {
-            const rawMocks = [
-                // 식량작물 (100)
-                { catCode: '100', name: '쌀 (일반계)', unitRetail: '1kg', priceRetail: 2620, unitWholesale: '20kg상자', priceWholesale: 52400 },
-                { catCode: '100', name: '감자 (수미)', unitRetail: '1kg', priceRetail: 1670, unitWholesale: '20kg상자', priceWholesale: 33494 },
-                { catCode: '100', name: '고구마 (밤)', unitRetail: '1kg', priceRetail: 2130, unitWholesale: '10kg상자', priceWholesale: 21374 },
-                { catCode: '100', name: '흰콩 (국산)', unitRetail: '500g', priceRetail: 5800, unitWholesale: '35kg가마', priceWholesale: 406000 },
-                // 채소류 (200)
-                { catCode: '200', name: '배추', unitRetail: '1포기', priceRetail: 3820, unitWholesale: '10kg망', priceWholesale: 11460 },
-                { catCode: '200', name: '양배추', unitRetail: '1통', priceRetail: 3070, unitWholesale: '8kg망', priceWholesale: 9213 },
-                { catCode: '200', name: '시금치', unitRetail: '1단', priceRetail: 4600, unitWholesale: '4kg상자', priceWholesale: 18500 },
-                { catCode: '200', name: '적상추', unitRetail: '100g', priceRetail: 1250, unitWholesale: '4kg상자', priceWholesale: 50000 },
-                { catCode: '200', name: '다다기오이', unitRetail: '10개', priceRetail: 8700, unitWholesale: '100개상자', priceWholesale: 87000 },
-                { catCode: '200', name: '양파', unitRetail: '1kg', priceRetail: 2450, unitWholesale: '15kg망', priceWholesale: 36750 },
-                { catCode: '200', name: '대파', unitRetail: '1단', priceRetail: 3100, unitWholesale: '1kg단 x 10', priceWholesale: 31000 },
-                { catCode: '200', name: '깐마늘(국산)', unitRetail: '1kg', priceRetail: 9800, unitWholesale: '20kg가마', priceWholesale: 196000 },
-                { catCode: '200', name: '파프리카', unitRetail: '200g', priceRetail: 1600, unitWholesale: '5kg상자', priceWholesale: 40000 },
-                { catCode: '200', name: '딸기 (국산)', unitRetail: '1kg', priceRetail: 12000, unitWholesale: '2kg상자', priceWholesale: 24000 },
-                // 과일류 (400)
-                { catCode: '400', name: '사과 (후지)', unitRetail: '10개', priceRetail: 11630, unitWholesale: '10kg상자', priceWholesale: 46527 },
-                { catCode: '400', name: '배 (신고)', unitRetail: '10개', priceRetail: 14550, unitWholesale: '10kg상자', priceWholesale: 58200 },
-                { catCode: '400', name: '샤인머스캣', unitRetail: '1kg', priceRetail: 12400, unitWholesale: '2kg상자', priceWholesale: 24800 },
-                { catCode: '400', name: '방울토마토', unitRetail: '1kg', priceRetail: 8200, unitWholesale: '5kg상자', priceWholesale: 41000 },
-                { catCode: '400', name: '단감', unitRetail: '10개', priceRetail: 8000, unitWholesale: '10kg상자', priceWholesale: 32000 },
-                { catCode: '400', name: '포도 (캠벨얼리)', unitRetail: '1kg', priceRetail: 7000, unitWholesale: '5kg상자', priceWholesale: 35000 },
-                { catCode: '400', name: '감귤 (국산)', unitRetail: '1kg', priceRetail: 2800, unitWholesale: '10kg상자', priceWholesale: 28000 }
-            ];
-            
-            appData = rawMocks.map((m, i) => {
-                const sens = getSensitivityByCategory(m.catCode);
-                const isRetail = activePriceClass === 'retail';
-                const unit = isRetail ? m.unitRetail : m.unitWholesale;
-                const price = isRetail ? m.priceRetail : m.priceWholesale;
-                return {
-                    id: 'mock_' + i, category: sens.category, name: m.name, unit: unit,
-                    basePrice: price, pastPrices: generateStablePastPrices(price),
-                    tempSens: sens.tempSens, rainSens: sens.rainSens, shocks: sens.shocks,
-                    baseVolume: getBaseVolumeByName(m.name)
-                };
-            });
-            initDataLoaded();
-        }
+
 
         let activeWeatherStation = { id: '108', name: '서울' };
         let activeWarningsList = []; // 실시간 기상 특보 데이터 목록 저장 변수
